@@ -1,0 +1,39 @@
+name: CI/CD
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USER }}/dhakacart-backend:latest
+      - name: Build frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USER }}/dhakacart-frontend:latest
+      - name: Deploy to lab via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.LAB_HOST }}
+          username: ${{ secrets.LAB_USER }}
+          key: ${{ secrets.LAB_SSH_KEY }}
+          script: |
+            kubectl -n dhakacart set image deployment/backend backend=${{ secrets.DOCKERHUB_USER }}/dhakacart-backend:latest
+            kubectl -n dhakacart set image deployment/frontend frontend=${{ secrets.DOCKERHUB_USER }}/dhakacart-frontend:latest
+            kubectl -n dhakacart rollout status deployment/backend

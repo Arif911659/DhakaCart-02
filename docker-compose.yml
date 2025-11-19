@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=dhakauser
+      - POSTGRES_PASSWORD=change_me
+      - POSTGRES_DB=dhakacart
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - dcnet
+  redis:
+    image: redis:7-alpine
+    networks:
+      - dcnet
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgres://dhakauser:change_me@postgres:5432/dhakacart
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=devsecret
+      - FRONTEND_URL=http://localhost:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dcnet
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:5173"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    depends_on:
+      - backend
+    networks:
+      - dcnet
+
+volumes:
+  pgdata:
+
+networks:
+  dcnet:
