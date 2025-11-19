@@ -1,0 +1,7 @@
+kubectl
+minikube-linux-amd64
+
+/kubectl*
+/minikube* 
+/minikube-darwin-amd64
+/minikube-windows-amd64
